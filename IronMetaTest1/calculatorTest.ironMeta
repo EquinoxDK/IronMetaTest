@@ -1,0 +1,75 @@
+﻿using System;
+using System.Linq;
+
+ironmeta calculatorTest<char, double> 
+{
+    Expression = Additive;
+    
+    Additive = Add | Sub | Multiplicative;
+    
+    Add = BinaryOp(Additive, '+', Multiplicative) 
+		-> { double a = _IM_Result.Results.ToList()[0];
+			 double b = _IM_Result.Results.ToList()[1];
+			 Console.WriteLine("Adding Decimals {0} + {1} = {2}",a,b,a+b);
+			 return a+b; };
+    
+	Sub = BinaryOp(Additive, '-', Multiplicative) 
+	    -> { double a = _IM_Result.Results.ToList()[0];
+			 double b = _IM_Result.Results.ToList()[1];
+			 Console.WriteLine("Subtracting Decimals {0} - {1} = {2}",a,b,a-b);
+			 return a-b; };
+ 
+	Multiplicative = Multiply | Divide | Decimals;
+    
+    Multiply = BinaryOp(Multiplicative, "*", Decimals) 
+	    -> { double a = _IM_Result.Results.ToList()[0];
+			 double b = _IM_Result.Results.ToList()[1];
+			 Console.WriteLine("Multiplying Decimal {0} * {1} = {2}",a,b, a*b);
+			 return a*b; };
+
+    Divide = BinaryOp(Multiplicative, "/", Decimals) 
+	    -> { double a = _IM_Result.Results.ToList()[0];
+			 double b = _IM_Result.Results.ToList()[1];
+			 Console.WriteLine("Dividing Decimal {0} / {1} = {2}",a,b, a/b);
+			 return a/b; };
+    
+	Decimals = CombineBinary | CombineUnary;
+	
+	Decimals = Number(DecimalDigit);
+	
+	CombineBinary = BinaryOp(Decimals, DS, Number, DecimalDigit) 
+	    -> { double a = _IM_Result.Results.ToList()[0];
+			 double b = _IM_Result.Results.ToList()[1];
+			 Console.WriteLine("Combining Decimal {0} - {1} = {2}",a,b,a.ToString() + "," + b.ToString());
+			 while (b>1) { b /= 10; }
+			 return a+b; };
+
+	CombineUnary = UnaryOp(DS, Number, DecimalDigit) 
+	    -> { double a = _IM_Result.Results.ToList()[0];
+			 Console.WriteLine("Unary Decimal {0} = {1}",a,"0," + a.ToString());
+			 while (a>1) { a /= 10; }
+			 return a; };
+        
+    BinaryOp :first :op :second .?:type = first:a KW(op) second(type):b 
+		-> { return new List<double> { a, b }; };
+	
+	UnaryOp :op :second .?:type = KW(op) second(type):b
+		-> { return b; };
+
+	Number :type = Digits(type):n WS* 
+		-> { Console.WriteLine("Read {0}", (char)n); return n; };
+    
+    Digits :type = Digits(type):a type:b 
+		-> { return (double)a*10+(double)b; };
+    
+	Digits :type = type;
+            
+    DecimalDigit = ['0'-'9']:c 
+		-> { return (char)c - '0'; };    
+    
+	KW :str = str WS*;
+    
+	DS = '.' | ',';
+
+	WS = ' ' | '\n' | '\r' | '\t';
+}
